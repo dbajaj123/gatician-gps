@@ -1,106 +1,116 @@
 const net = require('net');
 
 const HOST = '0.0.0.0';
-const PORT = 3000; // The port your GPS devices are configured to send data to
+const PORT = 3000; // The port your GPS devices send data to
 
-// A simple in-memory store for client buffers
+// A Map to store a data buffer for each connected client
 const clientBuffers = new Map();
 
-// The main function to parse a complete packet buffer
+/**
+ * Parses a complete data packet from a GPS device.
+ * @param {Buffer} packet The raw buffer of a single, complete packet.
+ * @returns {Buffer|null} A buffer to send back as a response, or null if no response is needed.
+ */
 const parsePacket = (packet) => {
+    // The protocol number determines the packet type (Login, GPS, Heartbeat, etc.)
     const protocolNumber = packet.readUInt8(3);
-    let response;
+    let response = null;
 
     switch (protocolNumber) {
         case 0x01: { // Login Packet
             const imei = packet.slice(4, 12).toString('hex');
             console.log(`[+] Login from IMEI: ${imei}`);
-            // Prepare the server's response to the login request
-            response = Buffer.from('787805010001d9dc0d0a', 'hex'); // A standard login response
+            
+            // A device expects a response to its login request to confirm connection.
+            // This is a standard, fixed response for the GT06 protocol.
+            response = Buffer.from('787805010001d9dc0d0a', 'hex');
             break;
         }
-        case 0x12: { // Location Data Packet (GPS)
-            console.log(`[+] Received Location Data Packet`);
-            // NOTE: Parsing logic below is a common representation.
-            // You may need to adjust based on your device's specific GT06 variant.
+
+        case 0x12: { // Location Data Packet
+            console.log(`[+] Received GPS Location Data`);
+            
+            // --- Date and Time ---
             const year = packet.readUInt8(4);
             const month = packet.readUInt8(5);
             const day = packet.readUInt8(6);
             const hours = packet.readUInt8(7);
             const minutes = packet.readUInt8(8);
             const seconds = packet.readUInt8(9);
+            // The date is sent in UTC. We create a Date object from it.
             const dateTime = new Date(Date.UTC(2000 + year, month - 1, day, hours, minutes, seconds));
 
-            const lat = packet.readUInt32BE(11);
-            const lon = packet.readUInt32BE(15);
+            // --- GPS Information ---
+            // The protocol stores coordinates as large integers. We must divide by 1,800,000 to get decimal degrees.
+            const latitude = packet.readInt32BE(11) / 1800000;
+            const longitude = packet.readInt32BE(15) / 1800000;
             const speed = packet.readUInt8(19);
-            const course = packet.readUInt16BE(20);
+            const courseStatus = packet.readUInt16BE(20); // Contains course, GPS positioning status, etc.
 
             console.log(`  [-] Timestamp: ${dateTime.toISOString()}`);
-            console.log(`  [-] Coordinates: ${lat / 1800000}, ${lon / 1800000}`);
+            console.log(`  [-] Coordinates: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
             console.log(`  [-] Speed: ${speed} km/h`);
+            console.log(`  [-] Course & Status: ${courseStatus}`);
+            // No response is typically sent for location packets.
             break;
         }
+
         case 0x13: { // Heartbeat Packet
             const terminalInfo = packet.readUInt8(4);
-            console.log(`[+] Received Heartbeat. Status: 0x${terminalInfo.toString(16)}`);
-            // Prepare the server's response to the heartbeat
+            console.log(`[+] Received Heartbeat. Status Byte: 0x${terminalInfo.toString(16)}`);
+            
+            // The device expects a response to its heartbeat. We must include its original serial number.
             const serial = packet.readUInt16BE(packet.length - 6);
-            response = Buffer.from('78780513' + serial.toString(16).padStart(4, '0') + 'XXXX0d0a', 'hex'); // CRC needs calculation, but often trackers don't check it
+            const baseResponse = `78780513${serial.toString(16).padStart(4, '0')}`;
+            // We use a placeholder CRC (0000) as most devices don't validate it, but the field is required.
+            response = Buffer.from(baseResponse + "00000d0a", 'hex');
             break;
         }
-        case 0x16: { // Alarm Packet (LBS extension data)
-             console.log('[+] Received Alarm/LBS Packet. Skipping detailed parse.');
-             break;
-        }
+
         default:
             console.log(`[!] Unhandled protocol number: 0x${protocolNumber.toString(16)}`);
     }
 
-    if (response) {
-        return response;
-    }
-    return null;
+    return response;
 };
 
+
+// --- The Main TCP Server Logic ---
 const server = net.createServer((socket) => {
     const clientKey = `${socket.remoteAddress}:${socket.remotePort}`;
     console.log(`✅ Accepted connection from ${clientKey}`);
-    
+
     // Initialize a buffer for this new client
     clientBuffers.set(clientKey, Buffer.alloc(0));
 
     socket.on('data', (data) => {
         console.log(`\n<-- Received raw chunk of size ${data.length}: ${data.toString('hex')}`);
-        
-        // Get the existing buffer and append the new data
+
         let buffer = clientBuffers.get(clientKey);
         buffer = Buffer.concat([buffer, data]);
 
-        // Loop as long as there might be a full packet in the buffer
-        while (buffer.length >= 4) { // Minimum possible packet size
-            // Find the start of the next valid packet ('7878')
+        // This loop ensures we process all complete packets in a single data chunk
+        while (buffer.length >= 4) {
             const startIndex = buffer.indexOf('7878', 0, 'hex');
             if (startIndex === -1) {
-                // No start bits found, discard the buffer and wait for new data
                 console.log('  [!] No valid start bits found. Clearing buffer.');
                 buffer = Buffer.alloc(0);
                 break;
             }
 
-            // If there's garbage data before the start bits, discard it
             if (startIndex > 0) {
-                 console.log(`  [!] Discarding ${startIndex} bytes of garbage data.`);
+                 console.log(`  [!] Discarding ${startIndex} bytes of invalid data from buffer start.`);
                  buffer = buffer.slice(startIndex);
             }
 
-            // Check for minimum length to read the packet length field
             if (buffer.length < 4) {
-                break; // Not enough data to determine packet length, wait for more
+                break; // Not enough data to read the packet length field
             }
             
+            // Packet Length is the 3rd byte, indicating length from Protocol Number to CRC
             const packetLength = buffer.readUInt8(2);
-            const totalPacketLength = packetLength + 5; // Start(2) + Length(1) + ... + End(2)
+            // Total length is the payload length + 5 fixed bytes (Start, Length, CRC, End)
+            const totalPacketLength = packetLength + 5;
 
             if (buffer.length >= totalPacketLength) {
                 const completePacket = buffer.slice(0, totalPacketLength);
@@ -112,28 +122,26 @@ const server = net.createServer((socket) => {
                     console.log('  --> Sent response:', response.toString('hex'));
                 }
                 
-                // CRUCIAL: Remove the processed packet from the buffer
+                // CRUCIAL: Remove the processed packet from the start of the buffer
                 buffer = buffer.slice(totalPacketLength);
             } else {
-                // We have a start bit but not the full packet yet.
-                // Break the loop and wait for more data to arrive.
                 console.log(`  [-] Incomplete packet. Waiting for more data. Have ${buffer.length}, need ${totalPacketLength}.`);
                 break;
             }
         }
         
-        // Store the remaining part of the buffer
+        // Save the remaining part of the buffer for the next data event
         clientBuffers.set(clientKey, buffer);
     });
 
     socket.on('close', () => {
         console.log(`❌ Connection closed from ${clientKey}`);
-        clientBuffers.delete(clientKey); // Clean up the buffer
+        clientBuffers.delete(clientKey); // Clean up memory
     });
 
     socket.on('error', (err) => {
-        console.error(`Socket Error from ${clientKey}:`, err);
-        clientBuffers.delete(clientKey); // Clean up the buffer
+        console.error(`Socket Error from ${clientKey}:`, err.message);
+        clientBuffers.delete(clientKey); // Clean up memory
     });
 });
 
