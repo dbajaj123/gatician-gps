@@ -205,6 +205,9 @@ server.listen(PORT, HOST, () => {
 // --- Simple HTTP API to read current coordinates ---
 const app = express();
 
+// Serve static files from frontend directory
+app.use(express.static('frontend'));
+
 // Return all devices with last-known positions
 app.get('/coordinates', (req, res) => {
     const all = Array.from(devices.values());
