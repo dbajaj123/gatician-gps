@@ -1,26 +1,34 @@
 const net = require('net');
+const express = require('express');
 
 const HOST = '0.0.0.0';
 const PORT = 3000; // The port your GPS devices send data to
+const HTTP_PORT = 3001; // Port for the HTTP API
 
 // A Map to store a data buffer for each connected client
 const clientBuffers = new Map();
+// A Map to store last-known device info by IMEI
+// Structure: { imei: { imei, latitude, longitude, speed, timestamp } }
+const devices = new Map();
 
 /**
  * Parses a complete data packet from a GPS device.
  * @param {Buffer} packet The raw buffer of a single, complete packet.
  * @returns {Buffer|null} A buffer to send back as a response, or null if no response is needed.
  */
+// parsePacket now returns an object { response, imei, coords }
 const parsePacket = (packet) => {
     // The protocol number determines the packet type (Login, GPS, Heartbeat, etc.)
     const protocolNumber = packet.readUInt8(3);
     let response = null;
+    let imei = null;
+    let coords = null;
 
     switch (protocolNumber) {
         case 0x01: { // Login Packet
-            const imei = packet.slice(4, 12).toString('hex');
+            imei = packet.slice(4, 12).toString('hex');
             console.log(`[+] Login from IMEI: ${imei}`);
-            
+
             // A device expects a response to its login request to confirm connection.
             // This is a standard, fixed response for the GT06 protocol.
             response = Buffer.from('787805010001d9dc0d0a', 'hex');
@@ -51,7 +59,15 @@ const parsePacket = (packet) => {
             console.log(`  [-] Coordinates: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
             console.log(`  [-] Speed: ${speed} km/h`);
             console.log(`  [-] Course & Status: ${courseStatus}`);
-            // No response is typically sent for location packets.
+            // Try to extract IMEI if embedded in packet (some devices include it)
+            try {
+                // Some GT06 variants include IMEI in preceding login or in additional bytes; we don't assume it's here.
+            } catch (e) {
+                // ignore
+            }
+
+            // Populate coords object to let caller store it if IMEI is known from session
+            coords = { latitude, longitude, speed, timestamp: dateTime.toISOString() };
             break;
         }
 
@@ -71,7 +87,7 @@ const parsePacket = (packet) => {
             console.log(`[!] Unhandled protocol number: 0x${protocolNumber.toString(16)}`);
     }
 
-    return response;
+    return { response, imei, coords };
 };
 
 
@@ -91,7 +107,7 @@ const server = net.createServer((socket) => {
 
         // This loop ensures we process all complete packets in a single data chunk
         while (buffer.length >= 4) {
-            const startIndex = buffer.indexOf('7878', 0, 'hex');
+              const startIndex = buffer.indexOf('7878', 0, 'hex');
             if (startIndex === -1) {
                 console.log('  [!] No valid start bits found. Clearing buffer.');
                 buffer = Buffer.alloc(0);
@@ -116,10 +132,31 @@ const server = net.createServer((socket) => {
                 const completePacket = buffer.slice(0, totalPacketLength);
                 
                 console.log('  [+] Found complete packet:', completePacket.toString('hex'));
-                const response = parsePacket(completePacket);
+                const { response, imei, coords } = parsePacket(completePacket);
                 if (response) {
                     socket.write(response);
                     console.log('  --> Sent response:', response.toString('hex'));
+                }
+
+                // If we got an IMEI from a login packet, store it in the clientBuffers map for this session
+                if (imei) {
+                    const meta = { imei };
+                    clientBuffers.set(clientKey, { buffer: Buffer.alloc(0), meta });
+                    devices.set(imei, { imei, lastSeen: new Date().toISOString() });
+                }
+
+                // If we received coordinates, try to associate them with the IMEI from session meta
+                if (coords) {
+                    const existing = clientBuffers.get(clientKey);
+                    const sessionMeta = existing && existing.meta;
+                    const sessionImei = sessionMeta && sessionMeta.imei;
+                    if (sessionImei) {
+                        devices.set(sessionImei, { imei: sessionImei, ...coords });
+                        console.log(`  [*] Stored coords for IMEI ${sessionImei}`);
+                    } else {
+                        // If no session IMEI, optionally log and ignore. We could try to extract IMEI from packet but not implemented.
+                        console.log('  [!] Received coords but no IMEI associated with this session. Ignoring storage.');
+                    }
                 }
                 
                 // CRUCIAL: Remove the processed packet from the start of the buffer
@@ -131,7 +168,13 @@ const server = net.createServer((socket) => {
         }
         
         // Save the remaining part of the buffer for the next data event
-        clientBuffers.set(clientKey, buffer);
+        // If this client has session meta object, preserve it.
+        const existing = clientBuffers.get(clientKey);
+        if (existing && existing.meta) {
+            clientBuffers.set(clientKey, { buffer, meta: existing.meta });
+        } else {
+            clientBuffers.set(clientKey, buffer);
+        }
     });
 
     socket.on('close', () => {
@@ -147,4 +190,26 @@ const server = net.createServer((socket) => {
 
 server.listen(PORT, HOST, () => {
     console.log(`🚀 TCP Server for GPS Trackers listening on ${HOST}:${PORT}`);
+});
+
+// --- Simple HTTP API to read current coordinates ---
+const app = express();
+
+// Return all devices with last-known positions
+app.get('/coordinates', (req, res) => {
+    const all = Array.from(devices.values());
+    res.json(all);
+});
+
+// Return last-known position for a specific IMEI
+app.get('/coordinates/:imei', (req, res) => {
+    const imei = req.params.imei;
+    if (!devices.has(imei)) {
+        return res.status(404).json({ error: 'IMEI not found' });
+    }
+    res.json(devices.get(imei));
+});
+
+app.listen(HTTP_PORT, () => {
+    console.log(`🌐 HTTP API listening on http://localhost:${HTTP_PORT}`);
 });
