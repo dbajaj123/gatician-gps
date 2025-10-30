@@ -98,7 +98,7 @@ const server = net.createServer((socket) => {
     console.log(`✅ Accepted connection from ${clientKey}`);
 
     // Initialize a buffer for this new client
-    clientBuffers.set(clientKey, Buffer.alloc(0));
+    clientBuffers.set(clientKey, { buffer: Buffer.alloc(0), meta: null });
 
     socket.on('data', (data) => {
         console.log(`\n<-- Received raw chunk of size ${data.length}: ${data.toString('hex')}`);
@@ -113,7 +113,16 @@ const server = net.createServer((socket) => {
             return;
         }
 
-        let buffer = clientBuffers.get(clientKey);
+        let clientData = clientBuffers.get(clientKey);
+        let buffer;
+        
+        // Extract buffer from client data object
+        if (clientData && clientData.buffer) {
+            buffer = clientData.buffer;
+        } else {
+            buffer = Buffer.alloc(0);
+        }
+        
         buffer = Buffer.concat([buffer, data]);
 
         // This loop ensures we process all complete packets in a single data chunk
@@ -151,15 +160,16 @@ const server = net.createServer((socket) => {
 
                 // If we got an IMEI from a login packet, store it in the clientBuffers map for this session
                 if (imei) {
+                    const currentData = clientBuffers.get(clientKey);
                     const meta = { imei };
-                    clientBuffers.set(clientKey, { buffer: Buffer.alloc(0), meta });
+                    clientBuffers.set(clientKey, { buffer: currentData.buffer, meta });
                     devices.set(imei, { imei, lastSeen: new Date().toISOString() });
                 }
 
                 // If we received coordinates, try to associate them with the IMEI from session meta
                 if (coords) {
-                    const existing = clientBuffers.get(clientKey);
-                    const sessionMeta = existing && existing.meta;
+                    const sessionData = clientBuffers.get(clientKey);
+                    const sessionMeta = sessionData && sessionData.meta;
                     const sessionImei = sessionMeta && sessionMeta.imei;
                     if (sessionImei) {
                         devices.set(sessionImei, { imei: sessionImei, ...coords });
@@ -179,13 +189,10 @@ const server = net.createServer((socket) => {
         }
         
         // Save the remaining part of the buffer for the next data event
-        // If this client has session meta object, preserve it.
-        const existing = clientBuffers.get(clientKey);
-        if (existing && existing.meta) {
-            clientBuffers.set(clientKey, { buffer, meta: existing.meta });
-        } else {
-            clientBuffers.set(clientKey, buffer);
-        }
+        // Preserve any existing session metadata
+        const sessionData = clientBuffers.get(clientKey);
+        const existingMeta = sessionData && sessionData.meta;
+        clientBuffers.set(clientKey, { buffer, meta: existingMeta });
     });
 
     socket.on('close', () => {
