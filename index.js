@@ -102,6 +102,16 @@ const server = net.createServer((socket) => {
     socket.on('data', (data) => {
         console.log(`\n<-- Received raw chunk of size ${data.length}: ${data.toString('hex')}`);
 
+        // Check if this looks like an HTTP request
+        const dataStr = data.toString('ascii', 0, Math.min(data.length, 16));
+        if (dataStr.startsWith('GET ') || dataStr.startsWith('POST ') || dataStr.startsWith('PUT ') || dataStr.startsWith('DELETE ')) {
+            console.log('  [!] HTTP request detected on GPS TCP port. Sending redirect response.');
+            const httpResponse = `HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nThis is a GPS tracker TCP server. For HTTP API, use port ${HTTP_PORT}\r\nTry: http://localhost:${HTTP_PORT}/coordinates\r\n`;
+            socket.write(httpResponse);
+            socket.end();
+            return;
+        }
+
         let buffer = clientBuffers.get(clientKey);
         buffer = Buffer.concat([buffer, data]);
 
