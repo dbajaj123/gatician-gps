@@ -1,5 +1,6 @@
 const net = require('net');
 const express = require('express');
+const cors = require('cors');
 
 const HOST = '0.0.0.0';
 const PORT = 3000; // The port your GPS devices send data to
@@ -205,8 +206,20 @@ server.listen(PORT, HOST, () => {
 // --- Simple HTTP API to read current coordinates ---
 const app = express();
 
-// Serve static files from frontend directory
-app.use(express.static('frontend'));
+// Enable CORS for all routes and origins
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept']
+}));
+
+// Parse JSON bodies
+app.use(express.json());
+
+// Test endpoint to verify CORS
+app.get('/test', (req, res) => {
+    res.json({ message: 'CORS is working!', timestamp: new Date().toISOString() });
+});
 
 // Return all devices with last-known positions
 app.get('/coordinates', (req, res) => {
