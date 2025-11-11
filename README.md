@@ -1,8 +1,64 @@
-# Gatician GPS Backend v2.0
+# Gatician GPS Tracking System
 
-Industry-level secure GPS tracking backend with REST APIs, built with Node.js, Express, and MongoDB.
+Full-stack GPS tracking platform with React frontend and Node.js backend. Track GPS devices in real-time with an intuitive web interface.
 
-## 🚀 Features
+## 🌟 Overview
+
+Gatician is a complete GPS tracking solution featuring:
+- **Modern React Frontend**: Interactive dashboard with real-time maps
+- **Secure REST API Backend**: Node.js/Express with JWT authentication
+- **TCP GPS Server**: Receives data from GPS devices
+- **MongoDB Database**: Efficient storage and retrieval
+
+---
+
+## 📸 Screenshots
+
+### Login Page
+Beautiful authentication interface with form validation
+![Login Page - see attachments]
+
+### Dashboard with Live Map
+Real-time device tracking with interactive maps
+![Dashboard - see attachments]
+
+---
+
+## 🚀 Quick Start
+
+### Option 1: Automated Setup (Windows)
+
+Run the setup script:
+```bash
+setup.bat
+```
+
+Then start both servers:
+```bash
+start-dev.bat
+```
+
+### Option 2: Manual Setup
+
+See [SETUP_GUIDE.md](SETUP_GUIDE.md) for detailed instructions.
+
+---
+
+## 🎯 Features
+
+## 🎯 Features
+
+### Frontend (React + Vite)
+- 🔐 **Authentication**: Secure login/register with JWT
+- 🗺️ **Interactive Maps**: Real-time device tracking with React Leaflet
+- 📱 **Responsive Design**: Works on desktop, tablet, and mobile
+- � **Auto-Refresh**: Live updates every 7 seconds
+- 🎨 **Modern UI**: Beautiful interface with Tailwind CSS
+- 📊 **Dashboard**: Overview with statistics and device status
+- 🖥️ **Monitor**: Detailed real-time device monitoring
+- 📡 **Device Management**: Add, edit, and manage devices
+
+### Backend (Node.js + Express)
 
 - **🔐 Security First**
   - JWT-based authentication with refresh tokens
