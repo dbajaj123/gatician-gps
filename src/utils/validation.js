@@ -32,7 +32,7 @@ const userValidation = {
  */
 const deviceValidation = {
   create: Joi.object({
-    imei: Joi.string().pattern(/^[0-9]{15,16}$/).required(),
+    imei: Joi.string().pattern(/^[0-9]{16}$/).required(),
     name: Joi.string().max(100).optional(),
     model: Joi.string().max(50).optional(),
     metadata: Joi.object().optional(),
