@@ -46,7 +46,7 @@ const deviceValidation = {
   }),
 
   imei: Joi.object({
-    imei: Joi.string().pattern(/^[0-9]{15,16}$/).required(),
+    imei: Joi.string().pattern(/^[0-9]{16}$/).required(),
   }),
 };
 
