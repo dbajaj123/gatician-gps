@@ -1,15 +1,43 @@
 {
-  "name": "request-logger-nodejs",
-  "version": "1.0.0",
-  "description": "A simple server to log all incoming requests.",
-  "main": "index.js",
+  "name": "gatician-gps-backend",
+  "version": "2.0.0",
+  "description": "Industry-level secure GPS tracking backend with REST APIs",
+  "main": "src/index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest --coverage",
+    "lint": "eslint src/**/*.js",
+    "lint:fix": "eslint src/**/*.js --fix"
   },
+  "keywords": ["gps", "tracker", "rest-api", "express", "mongodb"],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0",
+    "dotenv": "^16.3.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
     "cors": "^2.8.5",
-    "express": "^4.18.2"
+    "winston": "^3.11.0",
+    "winston-daily-rotate-file": "^4.7.1",
+    "joi": "^17.11.0",
+    "express-async-errors": "^3.1.1",
+    "compression": "^1.7.4",
+    "express-mongo-sanitize": "^2.2.0",
+    "xss-clean": "^0.1.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "eslint": "^8.54.0",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
   }
 }
