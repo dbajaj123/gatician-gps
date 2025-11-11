@@ -13,7 +13,7 @@ class Database {
       mongoose.set('strictQuery', false);
 
       // Connect to MongoDB
-      this.connection = await mongoose.connect(config.database.uri, config.database.options);
+      this.connection = await mongoose.connect(config.database.uri);
 
       logger.info(`✅ MongoDB connected successfully: ${this.connection.connection.host}`);
 
@@ -32,7 +32,8 @@ class Database {
 
       return this.connection;
     } catch (error) {
-      logger.error('Failed to connect to MongoDB:', error);
+      logger.error('Failed to connect to MongoDB:', error.message);
+      logger.error('Make sure MongoDB is running. Start it with: net start MongoDB (Windows) or sudo systemctl start mongod (Linux)');
       process.exit(1);
     }
   }

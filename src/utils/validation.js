@@ -32,7 +32,7 @@ const userValidation = {
  */
 const deviceValidation = {
   create: Joi.object({
-    imei: Joi.string().pattern(/^[0-9]{15}$/).required(),
+    imei: Joi.string().pattern(/^[0-9]{15,16}$/).required(),
     name: Joi.string().max(100).optional(),
     model: Joi.string().max(50).optional(),
     metadata: Joi.object().optional(),
@@ -46,7 +46,7 @@ const deviceValidation = {
   }),
 
   imei: Joi.object({
-    imei: Joi.string().pattern(/^[0-9]{15}$/).required(),
+    imei: Joi.string().pattern(/^[0-9]{15,16}$/).required(),
   }),
 };
 
@@ -55,7 +55,7 @@ const deviceValidation = {
  */
 const locationValidation = {
   create: Joi.object({
-    imei: Joi.string().pattern(/^[0-9]{15}$/).required(),
+    imei: Joi.string().pattern(/^[0-9]{15,16}$/).required(),
     latitude: Joi.number().min(-90).max(90).required(),
     longitude: Joi.number().min(-180).max(180).required(),
     speed: Joi.number().min(0).optional(),

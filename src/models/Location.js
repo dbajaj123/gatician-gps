@@ -8,9 +8,9 @@ const locationSchema = new mongoose.Schema(
       index: true,
       validate: {
         validator: function(v) {
-          return /^[0-9]{15}$/.test(v);
+          return /^[0-9]{15,16}$/.test(v);
         },
-        message: 'IMEI must be a 15-digit number',
+        message: 'IMEI must be a 15 or 16-digit number',
       },
     },
     latitude: {
