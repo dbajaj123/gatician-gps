@@ -23,7 +23,9 @@ module.exports = {
   },
   
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:8080',
+    origin: process.env.CORS_ORIGIN 
+      ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+      : 'http://localhost:8080',
     credentials: true,
   },
   
