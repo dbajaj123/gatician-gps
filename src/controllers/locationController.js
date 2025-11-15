@@ -8,7 +8,7 @@ class LocationController {
    */
   async getAllLocations(req, res) {
     try {
-      const { page = 1, limit = 50, sortBy = 'timestamp', sortOrder = 'desc', imei } = req.query;
+      const { page = 1, limit = 10000, sortBy = 'timestamp', sortOrder = 'desc', imei } = req.query;
       
       const query = {};
       
@@ -111,7 +111,7 @@ class LocationController {
   async getLocationHistory(req, res) {
     try {
       const { imei } = req.params;
-      const { startDate, endDate, limit = 100 } = req.query;
+      const { startDate, endDate, limit = 10000 } = req.query;
 
       // Check device ownership
       const device = await Device.findOne({ imei });
