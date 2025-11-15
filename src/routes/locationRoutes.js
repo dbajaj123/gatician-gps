@@ -30,4 +30,7 @@ router.post('/', validate(locationValidation.create), locationController.createL
 // Delete old locations (admin only)
 router.delete('/cleanup', authorize('admin', 'superadmin'), locationController.deleteOldLocations);
 
+// Delete all locations for a device
+router.delete('/device/:imei', locationController.deleteDeviceLocations);
+
 module.exports = router;
