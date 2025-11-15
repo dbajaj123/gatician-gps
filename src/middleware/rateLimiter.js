@@ -7,7 +7,7 @@ const logger = require('../config/logger');
  */
 const apiLimiter = rateLimit({
   windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.maxRequests,
+  max: 10000, // Increased for bulk data import
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.',
@@ -50,7 +50,7 @@ const authLimiter = rateLimit({
  */
 const deviceLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // 10 device registrations per hour
+  max: 1000, // Increased to 1000 for data import
   message: {
     success: false,
     message: 'Too many device registrations, please try again later.',
