@@ -67,8 +67,8 @@ function getRoute(fromLat, fromLng, toLat, toLng) {
 // Helper: Convert route coordinates to location points with smooth transitions
 function routeToPoints(coordinates, durationSeconds) {
   const points = [];
-  // Very high point density: 5-second intervals for uniform distribution (~1000 points per day)
-  const totalPoints = Math.max(20, Math.floor(durationSeconds / 5)); // Point every 5 seconds
+  // High point density: 10-second intervals for very smooth, uniform paths
+  const totalPoints = Math.max(15, Math.floor(durationSeconds / 10)); // Point every 10 seconds
   
   for (let i = 0; i < totalPoints; i++) {
     const idx = Math.floor((i / (totalPoints - 1)) * (coordinates.length - 1));
@@ -148,6 +148,8 @@ function generateDailyRoute() {
     IIT_LOCATIONS.shivalik,
     IIT_LOCATIONS.vindy,
     IIT_LOCATIONS.kailash,
+    IIT_LOCATIONS.iitMarket2,
+    IIT_LOCATIONS.iitMarket3,
     IIT_LOCATIONS.rniRoad,
     IIT_LOCATIONS.rniRoad2,
     IIT_LOCATIONS.ara,
@@ -159,8 +161,6 @@ function generateDailyRoute() {
     IIT_LOCATIONS.jwala, 
     IIT_LOCATIONS.dms, 
     IIT_LOCATIONS.iitMarket,
-    IIT_LOCATIONS.iitMarket2,
-    IIT_LOCATIONS.iitMarket3,
     IIT_LOCATIONS.himadri,
     IIT_LOCATIONS.vikramshila,
     IIT_LOCATIONS.gate4
@@ -277,12 +277,12 @@ async function generateSyntheticData() {
             const roam = randomWalk(
               { latitude: leg.to.lat, longitude: leg.to.lng },
               leg.stopMinutes,
-              1, // Every 1 minute for maximum uniformity
+              2, // Every 2 minutes for more points
               4 // 4m radius
             );
             
             for (let j = 0; j < roam.length; j++) {
-              curTime = addMinutes(curTime, 1);
+              curTime = addMinutes(curTime, 2);
               pushPoint(roam[j], rand(0, 2)); // Low speed while stationary
             }
           }
