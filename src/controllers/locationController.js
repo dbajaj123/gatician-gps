@@ -299,6 +299,43 @@ class LocationController {
       return errorResponse(res, 500, 'Failed to delete old locations');
     }
   }
+
+  /**
+   * Delete all locations for a device
+   */
+  async deleteDeviceLocations(req, res) {
+    try {
+      const { imei } = req.params;
+
+      // Check device ownership
+      const device = await Device.findOne({ imei });
+      
+      if (!device) {
+        return errorResponse(res, 404, 'Device not found');
+      }
+
+      if (
+        req.userRole !== 'admin' &&
+        req.userRole !== 'superadmin' &&
+        device.owner &&
+        device.owner.toString() !== req.userId.toString()
+      ) {
+        return errorResponse(res, 403, 'Access denied');
+      }
+
+      const result = await Location.deleteMany({ imei });
+
+      logger.info(`Deleted ${result.deletedCount} locations for device ${imei}`);
+
+      return successResponse(res, 200, 'Device locations deleted successfully', {
+        imei,
+        deletedCount: result.deletedCount,
+      });
+    } catch (error) {
+      logger.error('Delete device locations error:', error);
+      return errorResponse(res, 500, 'Failed to delete device locations');
+    }
+  }
 }
 
 module.exports = new LocationController();
