@@ -1,0 +1,91 @@
+{
+  "locations": {
+    "parking": {
+      "lat": 28.545496,
+      "lng": 77.18731
+    },
+    "nilgiri": {
+      "lat": 28.547088,
+      "lng": 77.183433
+    },
+    "rajdhani": {
+      "lat": 28.546411,
+      "lng": 77.186882
+    },
+    "sacCircle": {
+      "lat": 28.546768,
+      "lng": 77.185225
+    },
+    "dograFront": {
+      "lat": 28.544392,
+      "lng": 77.192731
+    },
+    "himadriCircle": {
+      "lat": 28.544911,
+      "lng": 77.194247
+    },
+    "designDept": {
+      "lat": 28.544091,
+      "lng": 77.191856
+    },
+    "rniPark": {
+      "lat": 28.543806,
+      "lng": 77.187598
+    },
+    "dms": {
+      "lat": 28.546612,
+      "lng": 77.185078
+    }
+  },
+  "nearestRoadNodes": {
+    "parking": {
+      "lat": 28.5456836,
+      "lon": 77.1874438,
+      "distance": 25
+    },
+    "nilgiri": {
+      "lat": 28.5470782,
+      "lon": 77.1833445,
+      "distance": 9
+    },
+    "rajdhani": {
+      "lat": 28.5463761,
+      "lon": 77.1868506,
+      "distance": 5
+    },
+    "sacCircle": {
+      "lat": 28.5467657,
+      "lon": 77.1852496,
+      "distance": 2
+    },
+    "dograFront": {
+      "lat": 28.5443898,
+      "lon": 77.1926937,
+      "distance": 4
+    },
+    "himadriCircle": {
+      "lat": 28.5449085,
+      "lon": 77.194251,
+      "distance": 0
+    },
+    "designDept": {
+      "lat": 28.5441,
+      "lon": 77.1918169,
+      "distance": 4
+    },
+    "rniPark": {
+      "lat": 28.5439731,
+      "lon": 77.1871812,
+      "distance": 45
+    },
+    "dms": {
+      "lat": 28.5466476,
+      "lon": 77.1850708,
+      "distance": 4
+    }
+  },
+  "stats": {
+    "totalNodes": 11322,
+    "totalRoads": 678
+  }
+}
