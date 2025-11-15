@@ -70,7 +70,7 @@ const locationValidation = {
   query: Joi.object({
     startDate: Joi.date().iso().optional(),
     endDate: Joi.date().iso().optional(),
-    limit: Joi.number().min(1).max(1000).optional(),
+    limit: Joi.number().min(1).max(10000).optional(),
   }),
 
   radius: Joi.object({
