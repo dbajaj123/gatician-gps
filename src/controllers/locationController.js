@@ -111,7 +111,7 @@ class LocationController {
   async getLocationHistory(req, res) {
     try {
       const { imei } = req.params;
-      const { startDate, endDate, limit = 5000, sort = 'desc' } = req.query;
+      const { startDate, endDate, limit = 10000, sort = 'desc' } = req.query;
 
       // Check device ownership
       const device = await Device.findOne({ imei });
