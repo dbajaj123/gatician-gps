@@ -334,6 +334,8 @@ gatician-gps/
 ├── deploy.sh                 # Deployment script
 ├── package.json
 └── README.md
+
+**For Backend Developers**: See `docs/backend.md` for a focused developer guide, setup checklist, coding standards, and deployment procedures.
 ```
 
 ## 🧪 Testing

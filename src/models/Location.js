@@ -87,7 +87,7 @@ locationSchema.statics.getLatestByImei = async function (imei) {
 };
 
 // Static method to get location history
-locationSchema.statics.getHistory = async function (imei, startDate, endDate, limit = 100) {
+locationSchema.statics.getHistory = async function (imei, startDate, endDate, limit = 5000, sort = 'desc') {
   const query = { imei };
   
   if (startDate || endDate) {
@@ -96,8 +96,10 @@ locationSchema.statics.getHistory = async function (imei, startDate, endDate, li
     if (endDate) query.timestamp.$lte = new Date(endDate);
   }
   
+  const sortOrder = sort === 'asc' ? 1 : -1;
+  
   return this.find(query)
-    .sort({ timestamp: -1 })
+    .sort({ timestamp: sortOrder })
     .limit(limit);
 };
 
