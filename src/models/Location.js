@@ -87,7 +87,7 @@ locationSchema.statics.getLatestByImei = async function (imei) {
 };
 
 // Static method to get location history
-locationSchema.statics.getHistory = async function (imei, startDate, endDate, limit = 10000, sort = 'desc') {
+locationSchema.statics.getHistory = async function (imei, startDate, endDate, limit = 30000, sort = 'desc') {
   const query = { imei };
   
   if (startDate || endDate) {
