@@ -111,7 +111,7 @@ class LocationController {
   async getLocationHistory(req, res) {
     try {
       const { imei } = req.params;
-      const { startDate, endDate, limit = 10000, sort = 'desc' } = req.query;
+      const { startDate, endDate, limit = 100 } = req.query;
 
       // Check device ownership
       const device = await Device.findOne({ imei });
@@ -129,7 +129,7 @@ class LocationController {
         return errorResponse(res, 403, 'Access denied');
       }
 
-      const locations = await Location.getHistory(imei, startDate, endDate, parseInt(limit), sort);
+      const locations = await Location.getHistory(imei, startDate, endDate, parseInt(limit));
 
       return successResponse(res, 200, 'Location history retrieved successfully', {
         imei,
